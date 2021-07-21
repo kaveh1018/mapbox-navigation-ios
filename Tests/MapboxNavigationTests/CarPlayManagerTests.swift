@@ -11,7 +11,7 @@ import CarPlayTestHelper
 // For some reason XCTest bundles ignore @available annotations and these tests are run on iOS < 12 :(
 // This is a bug in XCTest which will hopefully get fixed in an upcoming release.
 
-@available(iOS 12.0, *)
+@available(iOS 14.0, *)
 class CarPlayManagerTests: TestCase {
     var manager: CarPlayManager?
     var searchController: CarPlaySearchController?
@@ -364,7 +364,7 @@ class CarPlayManagerTests: TestCase {
 import Quick
 import Nimble
 
-@available(iOS 12.0, *)
+@available(iOS 14.0, *)
 class CarPlayManagerSpec: QuickSpec {
     override func spec() {
         var manager: CarPlayManager?
@@ -553,7 +553,7 @@ class CarPlayManagerSpec: QuickSpec {
     }
 }
 
-@available(iOS 12.0, *)
+@available(iOS 14.0, *)
 extension CarPlayMapViewController {
     private static var presentedViewControllers: [UIViewController] = []
     private static var swizzled: Bool = false
