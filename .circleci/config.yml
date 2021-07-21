@@ -324,7 +324,7 @@ jobs:
           command: rm -rf *.xcodeproj
       - run:
           name: Run xcodebuild for Package.swift
-          command: xcodebuild -scheme MapboxNavigation-Package test -destination "platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>" | xcpretty
+          command: xcodebuild -scheme MapboxNavigation-Package test -destination "platform=iOS Simulator,OS=<< parameters.iOS >>,name=<< parameters.device >>" -only-testing:"MapboxNavigationTests/CarPlayManagerTests" | xcpretty
       - notify-build-finished:
           notify_success: << parameters.notify_success >>
 
