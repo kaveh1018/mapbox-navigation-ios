@@ -243,7 +243,7 @@ class CarPlayManagerTests: TestCase {
         XCTAssertEqual(CarPlayManager(styles: styles, directions: .mocked).styles, styles, "CarPlayManager should persist the initial styles given to it.")
     }
     
-    func disabled_testFinalDestinationAnnotationIsPresentInCarPlayMapViewController() {
+    func testFinalDestinationAnnotationIsPresentInCarPlayMapViewController() {
         
         class CarPlayManagerDelegateMock: CarPlayManagerDelegate {
             
@@ -334,7 +334,12 @@ class CarPlayManagerTests: TestCase {
                        carPlayManager.carPlayMapViewController,
                        "UIViewControllers should be equal.")
         
-        simulateCarPlayDisconnection()
+        let interfaceController = FakeCPInterfaceController(context: #function)
+        let window = CPWindow()
+
+        carPlayManager.application(UIApplication.shared,
+                                   didDisconnectCarInterfaceController: interfaceController,
+                                   from: window)
     }
 }
 

@@ -194,5 +194,3 @@ public class MapTemplateSpyProvider: MapTemplateProvider {
         return MapTemplateSpy()
     }
 }
-
-
