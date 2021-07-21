@@ -301,19 +301,19 @@ class CarPlayManagerTests: TestCase {
         XCTAssertNil(carPlayManager.carPlayMapViewController?.navigationMapView.pointAnnotationManager,
                      "Point annotation manager should be nil.")
         
-//        let styleJSONObject: [String: Any] = [
-//            "version": 1,
-//            "center": [
-//                37.763330, -122.385563
-//            ],
-//            "zoom": 15,
-//            "sources": [],
-//            "layers": []
-//        ]
-//
-//        let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
-//        XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
-//
+        let styleJSONObject: [String: Any] = [
+            "version": 1,
+            "center": [
+                37.763330, -122.385563
+            ],
+            "zoom": 15,
+            "sources": [],
+            "layers": []
+        ]
+
+        let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
+        XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
+
 //        let didAddFinalDestinationAnnotationExpectation = self.expectation {
 //            return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
 //        }
