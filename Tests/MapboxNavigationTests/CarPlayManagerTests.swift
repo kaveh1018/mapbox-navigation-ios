@@ -245,6 +245,9 @@ class CarPlayManagerTests: TestCase {
     
     func testFinalDestinationAnnotationIsPresentInCarPlayMapViewController() throws {
         
+        let systemVersion = UIDevice.current.systemVersion
+        print("System version: \(systemVersion)")
+        
         guard #available(iOS 14.0, *) else {
             throw XCTSkip("Unsupported iOS version.")
         }
