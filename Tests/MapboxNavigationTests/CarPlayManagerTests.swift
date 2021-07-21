@@ -290,17 +290,17 @@ class CarPlayManagerTests: TestCase {
         
         let route = Fixture.route(from: "route-with-banner-instructions",
                                   options: navigationRouteOptions)
-//
-//        carPlayManager.carPlayMapViewController?.navigationMapView.showWaypoints(on: route)
-//
-//        // Right after calling `NavigationMapView.showWaypoints(on:legIndex:)` and before loading actual
-//        // `MapView` style it is expected that `NavigationMapView.finalDestinationAnnotation` is assigned
-//        // to non-nil value.
-//        XCTAssertNotNil(carPlayManager.carPlayMapViewController?.navigationMapView.finalDestinationAnnotation,
-//                        "Final destination annotation should not be nil.")
-//        XCTAssertNil(carPlayManager.carPlayMapViewController?.navigationMapView.pointAnnotationManager,
-//                     "Point annotation manager should be nil.")
-//
+        
+        carPlayManager.carPlayMapViewController?.navigationMapView.showWaypoints(on: route)
+        
+        // Right after calling `NavigationMapView.showWaypoints(on:legIndex:)` and before loading actual
+        // `MapView` style it is expected that `NavigationMapView.finalDestinationAnnotation` is assigned
+        // to non-nil value.
+        XCTAssertNotNil(carPlayManager.carPlayMapViewController?.navigationMapView.finalDestinationAnnotation,
+                        "Final destination annotation should not be nil.")
+        XCTAssertNil(carPlayManager.carPlayMapViewController?.navigationMapView.pointAnnotationManager,
+                     "Point annotation manager should be nil.")
+        
 //        let styleJSONObject: [String: Any] = [
 //            "version": 1,
 //            "center": [
