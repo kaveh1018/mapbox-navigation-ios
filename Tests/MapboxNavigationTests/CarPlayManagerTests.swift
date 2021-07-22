@@ -324,6 +324,7 @@ class CarPlayManagerTests: TestCase {
         XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
 
         let didAddFinalDestinationAnnotationExpectation = self.expectation {
+            print("#3a \(carPlayManagerDelegateMock.didAddFinalDestinationAnnotation)")
             return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
         }
         
