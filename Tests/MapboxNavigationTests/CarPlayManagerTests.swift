@@ -323,7 +323,7 @@ class CarPlayManagerTests: TestCase {
         let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
         XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
 
-        let didAddFinalDestinationAnnotationExpectation = self.expectation {
+        expectation {
             print("#3a \(carPlayManagerDelegateMock.didAddFinalDestinationAnnotation)")
             return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
         }
@@ -334,7 +334,9 @@ class CarPlayManagerTests: TestCase {
 
         print("#3")
         
-        wait(for: [didAddFinalDestinationAnnotationExpectation], timeout: 5.0)
+        waitForExpectations(timeout: 5.0) { error in
+            print("#3b \(error)")
+        }
         
         print("#4")
 
