@@ -522,8 +522,77 @@ extension RouteController: Router {
         
         // If we still wait for the first status from NavNative, there is no need to reroute
         guard let status = status ?? navigator.getStatus() else { return true }
-        let offRoute = status.routeState == .offRoute || status.routeState == .invalid
-        return !offRoute
+
+        /// NavNative doesn't support reroutes after arrival.
+        /// The code below is a port of logic from LegacyRouteController
+        /// This should be removed once NavNative adds support for reroutes after arrival. 
+        if status.routeState == .complete {
+            guard let destination = routeProgress.currentLeg.destination else {
+                preconditionFailure("Route legs used for navigation must have destinations")
+            }
+            // If the user has arrived, do not continue monitor reroutes, step progress, etc
+            if routeProgress.currentLegProgress.userHasArrivedAtWaypoint &&
+                (delegate?.router(self, shouldPreventReroutesWhenArrivingAt: destination) ??
+                    RouteController.DefaultBehavior.shouldPreventReroutesWhenArrivingAtWaypoint) {
+                return true
+            }
+
+            func reroutingTolerance() -> CLLocationDistance {
+                guard let intersections = routeProgress.currentLegProgress.currentStepProgress.intersectionsIncludingUpcomingManeuverIntersection else { return RouteControllerMaximumDistanceBeforeRecalculating }
+                guard let userLocation = rawLocation else { return RouteControllerMaximumDistanceBeforeRecalculating }
+
+                for intersection in intersections {
+                    let absoluteDistanceToIntersection = userLocation.coordinate.distance(to: intersection.location)
+
+                    if absoluteDistanceToIntersection <= RouteControllerManeuverZoneRadius {
+                        return RouteControllerMaximumDistanceBeforeRecalculating / 2
+                    }
+                }
+                return RouteControllerMaximumDistanceBeforeRecalculating
+            }
+
+            func userIsWithinRadiusOfRoute(location: CLLocation) -> Bool {
+                let radius = max(reroutingTolerance(), RouteControllerManeuverZoneRadius)
+                let isCloseToCurrentStep = location.isWithin(radius, of: routeProgress.currentLegProgress.currentStep)
+                return isCloseToCurrentStep
+            }
+
+            func userCourseIsOnRoute(_ location: CLLocation) -> Bool {
+                let nearbyPolyline = routeProgress.nearbyShape
+                guard let calculatedCourseForLocationOnStep = location.interpolatedCourse(along: nearbyPolyline) else { return true }
+
+                let maxUpdatesAwayFromRouteGivenAccuracy = Int(location.horizontalAccuracy / Double(RouteControllerIncorrectCourseMultiplier))
+
+                if movementsAwayFromRoute >= max(RouteControllerMinNumberOfInCorrectCourses, maxUpdatesAwayFromRouteGivenAccuracy)  {
+                    return false
+                } else if location.shouldSnap(toRouteWith: calculatedCourseForLocationOnStep) {
+                    movementsAwayFromRoute = 0
+                } else {
+                    movementsAwayFromRoute += 1
+                }
+
+                return true
+            }
+
+            let isCloseToCurrentStep = userIsWithinRadiusOfRoute(location: location)
+
+            guard !isCloseToCurrentStep || !userCourseIsOnRoute(location) else { return true }
+
+            // Check and see if the user is near a future step.
+            guard let nearestStep = routeProgress.currentLegProgress.closestStep(to: location.coordinate) else {
+                return false
+            }
+
+            if nearestStep.distance < RouteControllerUserLocationSnappingDistance {
+                return true
+            }
+
+            return false
+        }
+        else {
+            let offRoute = status.routeState == .offRoute || status.routeState == .invalid
+            return !offRoute
+        }
     }
     
     public func reroute(from location: CLLocation, along progress: RouteProgress) {
