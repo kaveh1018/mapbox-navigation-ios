@@ -323,9 +323,15 @@ class CarPlayManagerTests: TestCase {
         let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
         XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
 
-        expectation {
+        let expectation = self.expectation {
             print("#3a \(carPlayManagerDelegateMock.didAddFinalDestinationAnnotation)")
             return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
+        }
+        
+        carPlayManager.carPlayMapViewController?.navigationMapView.mapView.mapboxMap.onNext(.mapLoadingError) { event in
+            print("#@ mapLoadingError \(event.type)")
+            expectation.fulfill()
+            XCTFail()
         }
         
         print("#1")
@@ -334,9 +340,7 @@ class CarPlayManagerTests: TestCase {
 
         print("#3")
         
-        waitForExpectations(timeout: 5.0) { error in
-            print("#3b \(error)")
-        }
+        wait(for: [expectation], timeout: 5.0)
         
         print("#4")
 
