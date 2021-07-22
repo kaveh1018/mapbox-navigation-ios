@@ -325,13 +325,13 @@ class CarPlayManagerTests: TestCase {
 //            return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
 //        }
 
-        let styleLoadedExpectation = expectation(description: "Style loaded expectation")
-        
-        carPlayManager.carPlayMapViewController?.navigationMapView.mapView.mapboxMap.loadStyleJSON(styleJSON, completion: { result in
-            styleLoadedExpectation.fulfill()
-        })
-        
-        wait(for: [styleLoadedExpectation], timeout: 5.0)
+//        let styleLoadedExpectation = expectation(description: "Style loaded expectation")
+//        
+//        carPlayManager.carPlayMapViewController?.navigationMapView.mapView.mapboxMap.loadStyleJSON(styleJSON, completion: { result in
+//            styleLoadedExpectation.fulfill()
+//        })
+//        
+//        wait(for: [styleLoadedExpectation], timeout: 5.0)
 
 //        wait(for: [didAddFinalDestinationAnnotationExpectation], timeout: 5.0)
 
