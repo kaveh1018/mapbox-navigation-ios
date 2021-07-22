@@ -321,13 +321,13 @@ class CarPlayManagerTests: TestCase {
         let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
         XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
 
-//        let didAddFinalDestinationAnnotationExpectation = self.expectation {
-//            return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
-//        }
+        let didAddFinalDestinationAnnotationExpectation = self.expectation {
+            return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
+        }
         
         carPlayManager.carPlayMapViewController?.navigationMapView.mapView.mapboxMap.loadStyleJSON(styleJSON)
 
-//        wait(for: [didAddFinalDestinationAnnotationExpectation], timeout: 5.0)
+        wait(for: [didAddFinalDestinationAnnotationExpectation], timeout: 5.0)
 
 //        let navigationMapView = carPlayManager.carPlayMapViewController?.navigationMapView
 //
