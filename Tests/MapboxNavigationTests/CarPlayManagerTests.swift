@@ -263,6 +263,7 @@ class CarPlayManagerTests: TestCase {
                                 routeIndex: Int,
                                 routeOptions: RouteOptions,
                                 desiredSimulationMode: SimulationMode) -> NavigationService {
+                print("#2a")
                 fatalError("This is an empty stub.")
             }
             
@@ -270,6 +271,7 @@ class CarPlayManagerTests: TestCase {
                                 didAdd finalDestinationAnnotation: PointAnnotation,
                                 to parentViewController: UIViewController,
                                 pointAnnotationManager: PointAnnotationManager) {
+                print("#2b")
                 didAddFinalDestinationAnnotation = true
                 self.parentViewController = parentViewController
             }
@@ -325,9 +327,15 @@ class CarPlayManagerTests: TestCase {
             return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
         }
         
+        print("#1")
+        
         carPlayManager.carPlayMapViewController?.navigationMapView.mapView.mapboxMap.loadStyleJSON(styleJSON)
 
+        print("#3")
+        
         wait(for: [didAddFinalDestinationAnnotationExpectation], timeout: 5.0)
+        
+        print("#4")
 
 //        let navigationMapView = carPlayManager.carPlayMapViewController?.navigationMapView
 //
