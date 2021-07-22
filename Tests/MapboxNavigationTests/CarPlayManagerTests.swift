@@ -274,6 +274,10 @@ class CarPlayManagerTests: TestCase {
                 print("#2b")
                 didAddFinalDestinationAnnotation = true
                 self.parentViewController = parentViewController
+                
+                NotificationCenter.default.post(name: NSNotification.Name(rawValue: "DidAddFinalDestinationAnnotation"),
+                                                object: nil,
+                                                userInfo: nil)
             }
         }
         
@@ -322,17 +326,21 @@ class CarPlayManagerTests: TestCase {
 
         let styleJSON: String = ValueConverter.toJson(forValue: styleJSONObject)
         XCTAssertFalse(styleJSON.isEmpty, "ValueConverter should create valid JSON string.")
-
-        let expectation = self.expectation {
-            print("#3a \(carPlayManagerDelegateMock.didAddFinalDestinationAnnotation)")
-            return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
-        }
         
-        carPlayManager.carPlayMapViewController?.navigationMapView.mapView.mapboxMap.onNext(.mapLoadingError) { event in
-            print("#@ mapLoadingError \(event.type)")
-            expectation.fulfill()
-            XCTFail()
-        }
+        let expectation = self.expectation(forNotification: NSNotification.Name(rawValue: "DidAddFinalDestinationAnnotation"),
+                                           object: nil,
+                                           handler: nil)
+
+//        let expectation = self.expectation {
+//            print("#3a \(carPlayManagerDelegateMock.didAddFinalDestinationAnnotation)")
+//            return carPlayManagerDelegateMock.didAddFinalDestinationAnnotation
+//        }
+//
+//        carPlayManager.carPlayMapViewController?.navigationMapView.mapView.mapboxMap.onNext(.mapLoadingError) { event in
+//            print("#@ mapLoadingError \(event.type)")
+//            expectation.fulfill()
+//            XCTFail()
+//        }
         
         print("#1")
         

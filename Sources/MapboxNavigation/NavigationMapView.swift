@@ -356,7 +356,6 @@ open class NavigationMapView: UIView {
         }
         
         mapView.mapboxMap.onNext(.styleLoaded) { [weak self] _ in
-            print("#@ styleLoaded")
             guard let self = self else { return }
             self.pointAnnotationManager = self.mapView.annotations.makePointAnnotationManager()
             
@@ -369,10 +368,6 @@ open class NavigationMapView: UIView {
                 
                 self.finalDestinationAnnotation = nil
             }
-        }
-        
-        mapView.mapboxMap.onNext(.mapLoadingError) { event in
-            print("#@ mapLoadingError \(event.type)")
         }
         
         addSubview(mapView)
