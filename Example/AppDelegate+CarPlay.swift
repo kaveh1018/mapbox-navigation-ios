@@ -70,7 +70,7 @@ extension AppDelegate: CPApplicationDelegate {
 extension AppDelegate: CarPlayManagerDelegate {
     
     func carPlayManager(_ carPlayManager: CarPlayManager,
-                        navigationServiceAlong routeResponse: RouteResponse,
+                        navigationServiceFor routeResponse: RouteResponse,
                         routeIndex: Int,
                         routeOptions: RouteOptions,
                         desiredSimulationMode: SimulationMode) -> NavigationService {
