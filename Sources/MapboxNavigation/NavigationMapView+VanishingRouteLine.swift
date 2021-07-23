@@ -196,9 +196,6 @@ extension NavigationMapView {
             return
         }
         
-        vanishingRouteLineUpdateTimer?.invalidate()
-        vanishingRouteLineUpdateTimer = nil
-        
         let traveledDifference = fractionTraveled - preFractionTraveled
         if traveledDifference == 0.0 {
             return
