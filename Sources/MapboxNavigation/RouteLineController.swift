@@ -44,6 +44,14 @@ extension NavigationMapView {
             self.navigationViewData = navigationViewData
         }
         
+        // MARK: - LocationConsumer method
+        
+        internal func locationUpdate(newLocation: Location) {
+            guard routeLineTracksTraversal, let progress = routeProgress else { return }
+            navigationMapView.updateTraveledRouteLine(newLocation.coordinate)
+            navigationMapView.updateRoute(progress)
+        }
+        
         // MARK: - Private methods
         
         private func showRouteIfNeeded() {
@@ -63,12 +71,6 @@ extension NavigationMapView {
             if annotatesSpokenInstructions {
                 navigationMapView.showVoiceInstructionsOnMap(route: router.route)
             }
-        }
-        
-        internal func locationUpdate(newLocation: Location) {
-            guard routeLineTracksTraversal, let progress = routeProgress else { return }
-            navigationMapView.updateTraveledRouteLine(newLocation.coordinate)
-            navigationMapView.updateRoute(progress)
         }
         
         private func updateMapOverlays(for routeProgress: RouteProgress) {

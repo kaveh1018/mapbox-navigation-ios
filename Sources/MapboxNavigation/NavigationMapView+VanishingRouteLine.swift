@@ -204,9 +204,13 @@ extension NavigationMapView {
             return
         }
         
-        let congestionSegments = routeProgress.route.congestionFeatures(legIndex: currentLegIndex, roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
+        // Calculate the current route leg congestion features only when it's changed when routeLineTracksTraversal enabled.
+        if routeProgress.currentLeg.segmentCongestionLevels != currentLegCongestionLevels {
+            currentLegCongestionLevels = routeProgress.currentLeg.segmentCongestionLevels
+            currentLegCongestionFeatures = routeProgress.route.congestionFeatures(legIndex: currentLegIndex, roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
+        }
         
-        updateRouteLine(congestionSegments:congestionSegments, layerIdentifier: mainRouteLayerIdentifier, fractionTraveledUpdate: fractionTraveled)
+        updateRouteLine(congestionSegments: currentLegCongestionFeatures, layerIdentifier: mainRouteLayerIdentifier, fractionTraveledUpdate: fractionTraveled)
         updateRouteLine(layerIdentifier: mainRouteCasingLayerIdentifier, fractionTraveledUpdate: fractionTraveled)
     }
     
