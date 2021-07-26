@@ -176,7 +176,6 @@ open class NavigationMapView: UIView {
     var routeRemainingDistancesIndex: Int?
     var routeLineTracksTraversal: Bool = false
     var fractionTraveled: Double = 0.0
-    var preFractionTraveled: Double = 0.0
     var currentLegIndex: Int?
     var currentLegCongestionLevels: [CongestionLevel]?
     var currentLegCongestionFeatures: [Turf.Feature]?

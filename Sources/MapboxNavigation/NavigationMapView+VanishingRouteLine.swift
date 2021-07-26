@@ -146,8 +146,9 @@ extension NavigationMapView {
     }
     
     /**
-     Updates the route line appearance from the origin point to the indicated point
-     - parameter coordinate: current position of the puck
+     Updates the route line appearance from the origin point to the indicated point.
+     
+     - parameter coordinate: Current position of the user location.
      */
     func updateTraveledRouteLine(_ coordinate: CLLocationCoordinate2D?) {
         guard let granularDistances = routeLineGranularDistances,let index = routeRemainingDistancesIndex, let location = coordinate else { return }
@@ -166,7 +167,6 @@ extension NavigationMapView {
         if granularDistances.distance >= remainingDistance {
             let offSet = (1.0 - remainingDistance / granularDistances.distance)
             if offSet >= 0 {
-                preFractionTraveled = fractionTraveled
                 fractionTraveled = offSet
             }
         }
@@ -175,15 +175,17 @@ extension NavigationMapView {
     /**
      Updates the route style layer and its casing style layer to gradually disappear as the user location puck travels along the displayed route.
      
+     - parameter coordinate: Current position of the user location.
      - parameter routeProgress: Current route progress.
      */
-    public func updateRoute(_ routeProgress: RouteProgress) {
+    public func updateVanishingRouteLine(coordinate: CLLocationCoordinate2D?, routeProgress: RouteProgress) {
+        updateTraveledRouteLine(coordinate)
+        
         let mainRouteLayerIdentifier = routeProgress.route.identifier(.route(isMainRoute: true))
         let mainRouteCasingLayerIdentifier = routeProgress.route.identifier(.routeCasing(isMainRoute: true))
         
         if fractionTraveled >= 1.0 {
             // In case if route was fully travelled - remove main route and its casing.
-            
             do {
                 try mapView.mapboxMap.style.removeLayer(withId: mainRouteLayerIdentifier)
                 try mapView.mapboxMap.style.removeLayer(withId: mainRouteCasingLayerIdentifier)
@@ -192,12 +194,6 @@ extension NavigationMapView {
             }
             
             fractionTraveled = 0.0
-            preFractionTraveled = 0.0
-            return
-        }
-        
-        let traveledDifference = fractionTraveled - preFractionTraveled
-        if traveledDifference == 0.0 {
             return
         }
         

@@ -317,8 +317,7 @@ public class CarPlayNavigationViewController: UIViewController {
         
         if routeLineTracksTraversal {
             navigationMapView?.updateUpcomingRoutePointIndex(routeProgress: routeProgress)
-            navigationMapView?.updateTraveledRouteLine(location.coordinate)
-            navigationMapView?.updateRoute(routeProgress)
+            navigationMapView?.updateVanishingRouteLine(coordinate: location.coordinate, routeProgress: routeProgress)
         }
     }
     

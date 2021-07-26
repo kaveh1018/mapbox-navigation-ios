@@ -48,8 +48,7 @@ extension NavigationMapView {
         
         internal func locationUpdate(newLocation: Location) {
             guard routeLineTracksTraversal, let progress = routeProgress else { return }
-            navigationMapView.updateTraveledRouteLine(newLocation.coordinate)
-            navigationMapView.updateRoute(progress)
+            navigationMapView.updateVanishingRouteLine(coordinate: newLocation.coordinate, routeProgress: progress)
         }
         
         // MARK: - Private methods
