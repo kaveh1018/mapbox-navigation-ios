@@ -565,13 +565,23 @@ open class NavigationMapView: UIView {
                                           legIndex: Int? = nil) -> String? {
         guard let shape = route.shape else { return nil }
         
-        let geoJSONSource = self.geoJSONSource(delegate?.navigationMapView(self, casingShapeFor: route) ?? shape)
+        let sourceShape = delegate?.navigationMapView(self, shapeFor: route) ?? shape
         let sourceIdentifier = route.identifier(.source(isMainRoute: isMainRoute, isSourceCasing: true))
         
-        do {
-            try mapView.mapboxMap.style.addSource(geoJSONSource, id: sourceIdentifier)
-        } catch {
-            NSLog("Failed to add route source \(sourceIdentifier) with error: \(error.localizedDescription).")
+        if mapView.mapboxMap.style.sourceExists(withId: sourceIdentifier) {
+            do {
+                let geoJSONData =  Feature.init(geometry: .lineString(sourceShape))
+                try mapView.mapboxMap.style.updateGeoJSONSource(withId: sourceIdentifier, geoJSON: geoJSONData)
+            } catch {
+                NSLog("Failed to update route source \(sourceIdentifier) with error: \(error.localizedDescription).")
+            }
+        } else {
+            do {
+                let geoJSONSource = self.geoJSONSource(sourceShape)
+                try mapView.mapboxMap.style.addSource(geoJSONSource, id: sourceIdentifier)
+            } catch {
+                NSLog("Failed to add route source \(sourceIdentifier) with error: \(error.localizedDescription).")
+            }
         }
         
         let layerIdentifier = route.identifier(.route(isMainRoute: isMainRoute))
@@ -612,7 +622,16 @@ open class NavigationMapView: UIView {
         }
         
         if let lineLayer = lineLayer {
-            do {
+            
+            if mapView.mapboxMap.style.layerExists(withId: layerIdentifier) {
+                do {
+                    try mapView.mapboxMap.style.updateLayer(withId: layerIdentifier) { (routeLineLayer: inout LineLayer) throws in
+                        routeLineLayer = lineLayer
+                    }
+                } catch {
+                    NSLog("Failed to update route layer \(layerIdentifier) with error: \(error.localizedDescription).")
+                }
+            } else {
                 var layerPosition: MapboxMaps.LayerPosition? = nil
                 
                 if isMainRoute {
@@ -624,10 +643,11 @@ open class NavigationMapView: UIView {
                         layerPosition = .below(belowLayerIdentifier)
                     }
                 }
-                
-                try mapView.mapboxMap.style.addLayer(lineLayer, layerPosition: layerPosition)
-            } catch {
-                NSLog("Failed to add route layer \(layerIdentifier) with error: \(error.localizedDescription).")
+                do {
+                    try mapView.mapboxMap.style.addLayer(lineLayer, layerPosition: layerPosition)
+                } catch {
+                    NSLog("Failed to add route layer \(layerIdentifier) with error: \(error.localizedDescription).")
+                }
             }
         }
         
@@ -637,12 +657,23 @@ open class NavigationMapView: UIView {
     @discardableResult func addRouteCasingLayer(_ route: Route, below parentLayerIndentifier: String? = nil, isMainRoute: Bool = true) -> String? {
         guard let shape = route.shape else { return nil }
         
-        let geoJSONSource = self.geoJSONSource(delegate?.navigationMapView(self, shapeFor: route) ?? shape)
+        let sourceShape = delegate?.navigationMapView(self, casingShapeFor: route) ?? shape
         let sourceIdentifier = route.identifier(.source(isMainRoute: isMainRoute, isSourceCasing: isMainRoute))
-        do {
-            try mapView.mapboxMap.style.addSource(geoJSONSource, id: sourceIdentifier)
-        } catch {
-            NSLog("Failed to add route casing source \(sourceIdentifier) with error: \(error.localizedDescription).")
+        
+        if mapView.mapboxMap.style.sourceExists(withId: sourceIdentifier) {
+            do {
+                let geoJSONData =  Feature.init(geometry: .lineString(sourceShape))
+                try mapView.mapboxMap.style.updateGeoJSONSource(withId: sourceIdentifier, geoJSON: geoJSONData)
+            } catch {
+                NSLog("Failed to update route casing source \(sourceIdentifier) with error: \(error.localizedDescription).")
+            }
+        } else {
+            do {
+                let geoJSONSource = self.geoJSONSource(sourceShape)
+                try mapView.mapboxMap.style.addSource(geoJSONSource, id: sourceIdentifier)
+            } catch {
+                NSLog("Failed to add route casing source \(sourceIdentifier) with error: \(error.localizedDescription).")
+            }
         }
         
         let layerIdentifier = route.identifier(.routeCasing(isMainRoute: isMainRoute))
@@ -667,14 +698,24 @@ open class NavigationMapView: UIView {
         }
         
         if let lineLayer = lineLayer {
-            do {
+            if mapView.mapboxMap.style.layerExists(withId: layerIdentifier) {
+                do {
+                    try mapView.mapboxMap.style.updateLayer(withId: layerIdentifier) { (routeCasingLayer: inout LineLayer) throws in
+                        routeCasingLayer = lineLayer
+                    }
+                } catch {
+                    NSLog("Failed to update route casing layer \(layerIdentifier) with error: \(error.localizedDescription).")
+                }
+            } else {
                 var layerPosition: MapboxMaps.LayerPosition? = nil
                 if let parentLayerIndentifier = parentLayerIndentifier {
                     layerPosition = .below(parentLayerIndentifier)
                 }
-                try mapView.mapboxMap.style.addLayer(lineLayer, layerPosition: layerPosition)
-            } catch {
-                NSLog("Failed to add route casing layer \(layerIdentifier) with error: \(error.localizedDescription).")
+                do {
+                    try mapView.mapboxMap.style.addLayer(lineLayer, layerPosition: layerPosition)
+                } catch {
+                    NSLog("Failed to add route casing layer \(layerIdentifier) with error: \(error.localizedDescription).")
+                }
             }
         }
         
