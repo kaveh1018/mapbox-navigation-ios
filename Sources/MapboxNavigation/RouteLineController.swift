@@ -89,6 +89,7 @@ extension NavigationMapView {
             if routeLineTracksTraversal {
                 navigationMapView.updateUpcomingRoutePointIndex(routeProgress: routeProgress)
                 self.routeProgress = routeProgress
+                navigationMapView.updateVanishingRouteLine(coordinate: router.location?.coordinate, routeProgress: routeProgress)
             }
         }
         
@@ -134,6 +135,7 @@ extension NavigationMapView {
             if routeLineTracksTraversal {
                 navigationMapView.updateUpcomingRoutePointIndex(routeProgress: progress)
                 routeProgress = progress
+                navigationMapView.updateVanishingRouteLine(coordinate: location.coordinate, routeProgress: progress)
             }
         }
         
