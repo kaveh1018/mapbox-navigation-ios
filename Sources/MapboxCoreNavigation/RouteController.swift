@@ -20,6 +20,8 @@ open class RouteController: NSObject {
         public static let shouldPreventReroutesWhenArrivingAtWaypoint: Bool = true
         public static let shouldDisableBatteryMonitoring: Bool = true
     }
+
+    private let sessionUUID: UUID = .init()
     
     var navigator: MapboxNavigationNative.Navigator {
         return Navigator.shared.navigator
@@ -159,13 +161,16 @@ open class RouteController: NSObject {
         UIDevice.current.isBatteryMonitoringEnabled = true
         
         super.init()
-        
+        BillingHandler.shared.beginBillingSession(for: .activeGuidance, uuid: sessionUUID)
+
         subscribeNotifications()
         updateNavigator(with: _routeProgress)
         updateObservation(for: _routeProgress)
     }
     
     deinit {
+        BillingHandler.shared.stopBillingSession(with: sessionUUID)
+        
         resetObservation(for: _routeProgress)
         unsubscribeNotifications()
     }
@@ -567,9 +572,39 @@ extension RouteController: Router {
     }
 
     public func updateRoute(with indexedRoute: IndexedRoute, routeOptions: RouteOptions?) {
+        if shouldStartNewBillingSession(for: indexedRoute.0, routeOptions: routeOptions) {
+            BillingHandler.shared.stopBillingSession(with: sessionUUID)
+            BillingHandler.shared.beginBillingSession(for: .activeGuidance, uuid: sessionUUID)
+        }
         let routeOptions = routeOptions ?? routeProgress.routeOptions
         routeProgress = RouteProgress(route: indexedRoute.0, routeIndex: indexedRoute.1, options: routeOptions)
         updateNavigator(with: routeProgress)
+    }
+
+    private func shouldStartNewBillingSession(for newRoute: Route, routeOptions: RouteOptions?) -> Bool {
+        guard let routeOptions = routeOptions else {
+            // Waypoints are read from routeOptions.
+            // If new route without routeOptions, it means we have the same waypoints.
+            return false
+        }
+        guard !routeOptions.waypoints.isEmpty else {
+            return false // Don't need to bil for routes without waypoints
+        }
+
+        let newRouteWaypoints = routeOptions.waypoints.dropFirst()
+        let currentRouteRemaingWaypoints = routeProgress.remainingWaypoints
+
+        guard newRouteWaypoints.count == currentRouteRemaingWaypoints.count else {
+            return true
+        }
+
+        for (newWaypoint, currentWaypoint) in zip(newRouteWaypoints, currentRouteRemaingWaypoints) {
+            if newWaypoint.coordinate.distance(to: currentWaypoint.coordinate) > 500 {
+                return true
+            }
+        }
+
+        return false
     }
 }
 
