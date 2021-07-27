@@ -200,31 +200,43 @@ extension NavigationMapView {
         // Calculate the current route leg congestion features only when it's changed when routeLineTracksTraversal enabled.
         if routeProgress.currentLeg.segmentCongestionLevels != currentLegCongestionLevels {
             currentLegCongestionLevels = routeProgress.currentLeg.segmentCongestionLevels
-            currentLegCongestionFeatures = routeProgress.route.congestionFeatures(legIndex: currentLegIndex, roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
+            let congestionFeatures = routeProgress.route.congestionFeatures(legIndex: currentLegIndex, roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
+            currentLineGradientStops = routeLineGradient(congestionFeatures, fractionTraveled: fractionTraveled)
         }
         
-        updateRouteLine(congestionSegments: currentLegCongestionFeatures, layerIdentifier: mainRouteLayerIdentifier, fractionTraveledUpdate: fractionTraveled)
-        updateRouteLine(layerIdentifier: mainRouteCasingLayerIdentifier, fractionTraveledUpdate: fractionTraveled)
-    }
-    
-    func updateRouteLine(congestionSegments: [Turf.Feature]? = nil, layerIdentifier: String, fractionTraveledUpdate: Double) {
-        do {
-            if let congestionSegments = congestionSegments {
-                try mapView.mapboxMap.style.updateLayer(withId: layerIdentifier) { (lineLayer: inout LineLayer) throws in
-                    let mainRouteLayerGradient = self.routeLineGradient(congestionSegments,
-                                                                        fractionTraveled: fractionTraveledUpdate)
+        if !currentLineGradientStops.isEmpty {
+            do {
+                try mapView.mapboxMap.style.updateLayer(withId: mainRouteLayerIdentifier) { (lineLayer: inout LineLayer) throws in
+                    let mainRouteLayerGradient = self.updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: currentLineGradientStops)
                     lineLayer.lineGradient = .expression(Expression.routeLineGradientExpression(mainRouteLayerGradient, lineBaseColor: trafficUnknownColor))
                 }
-            } else {
-                try mapView.mapboxMap.style.updateLayer(withId: layerIdentifier) { (lineLayer: inout LineLayer) throws in
-                    let mainRouteCasingLayerGradient = routeLineGradient(fractionTraveled: fractionTraveledUpdate)
-                    
+                
+                try mapView.mapboxMap.style.updateLayer(withId: mainRouteCasingLayerIdentifier) { (lineLayer: inout LineLayer) throws in
+                    let mainRouteCasingLayerGradient = routeLineGradient(fractionTraveled: fractionTraveled)
                     lineLayer.lineGradient = .expression(Expression.routeLineGradientExpression(mainRouteCasingLayerGradient, lineBaseColor: routeCasingColor))
                 }
+            } catch {
+                print("Failed to update main route line layer.")
             }
-        } catch {
-            print("Failed to update main route line layer.")
         }
+        
+    }
+    
+    func updateRouteLineGradientStops(fractionTraveled: Double, gradientStops: [Double: UIColor]) -> [Double: UIColor] {
+        var filteredGradientStops = gradientStops.filter { key, value in
+            return key >= fractionTraveled
+        }
+        
+        let  nextDownFractionTraveled = Double(CGFloat(fractionTraveled).nextDown)
+        if let minStop = filteredGradientStops.min(by: { $0.0 < $1.0 }) {
+            filteredGradientStops[0.0] = traversedRouteColor
+            if nextDownFractionTraveled >= 0.0 {
+                filteredGradientStops[nextDownFractionTraveled] = traversedRouteColor
+            }
+            filteredGradientStops[fractionTraveled] = minStop.value
+        }
+
+        return filteredGradientStops
     }
     
     func routeLineGradient(_ congestionFeatures: [Turf.Feature]? = nil, fractionTraveled: Double, isMain: Bool = true) -> [Double: UIColor] {

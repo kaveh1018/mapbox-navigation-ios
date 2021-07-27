@@ -178,7 +178,7 @@ open class NavigationMapView: UIView {
     var fractionTraveled: Double = 0.0
     var currentLegIndex: Int?
     var currentLegCongestionLevels: [CongestionLevel]?
-    var currentLegCongestionFeatures: [Turf.Feature]?
+    var currentLineGradientStops = [Double: UIColor]()
     
     var showsRoute: Bool {
         get {
@@ -526,7 +526,8 @@ open class NavigationMapView: UIView {
                 initPrimaryRoutePoints(route: route)
                 if let currentLegIndex = currentLegIndex {
                     currentLegCongestionLevels = route.legs[currentLegIndex].segmentCongestionLevels
-                    currentLegCongestionFeatures = route.congestionFeatures(legIndex: currentLegIndex, roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
+                    let congestionFeatures = route.congestionFeatures(legIndex: currentLegIndex, roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
+                    currentLineGradientStops = routeLineGradient(congestionFeatures, fractionTraveled: fractionTraveled)
                 }
             }
             
@@ -600,15 +601,14 @@ open class NavigationMapView: UIView {
             // TODO: Verify that `isAlternativeRoute` parameter usage is needed.
             if isMainRoute {
                 let gradientStops: [Double: UIColor]
-                if let currentLegCongestionFeatures = currentLegCongestionFeatures {
-                    gradientStops = routeLineGradient(currentLegCongestionFeatures,
-                                                      fractionTraveled: routeLineTracksTraversal ? fractionTraveled : 0.0)
+                if !currentLineGradientStops.isEmpty {
+                    lineLayer?.lineGradient = .expression((Expression.routeLineGradientExpression(currentLineGradientStops, lineBaseColor: trafficUnknownColor)))
                 } else {
                     let congestionFeatures = route.congestionFeatures(legIndex: legIndex, roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
                     gradientStops = routeLineGradient(congestionFeatures,
                                                       fractionTraveled: routeLineTracksTraversal ? fractionTraveled : 0.0)
+                    lineLayer?.lineGradient = .expression((Expression.routeLineGradientExpression(gradientStops, lineBaseColor: trafficUnknownColor)))
                 }
-                lineLayer?.lineGradient = .expression((Expression.routeLineGradientExpression(gradientStops, lineBaseColor: trafficUnknownColor)))
             } else {
                 if showsCongestionForAlternativeRoutes {
                     let gradientStops = routeLineGradient(route.congestionFeatures(roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels),
