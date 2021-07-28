@@ -146,11 +146,11 @@ extension NavigationMapView {
     }
     
     /**
-     Updates the route line appearance from the origin point to the indicated point.
+     Updates the fractionTraveled along the route line from the origin point to the indicated point.
      
      - parameter coordinate: Current position of the user location.
      */
-    func updateTraveledRouteLine(_ coordinate: CLLocationCoordinate2D?) {
+    func updateFractionTraveled(_ coordinate: CLLocationCoordinate2D?) {
         guard let granularDistances = routeLineGranularDistances,let index = routeRemainingDistancesIndex, let location = coordinate else { return }
         guard index < granularDistances.distanceArray.endIndex else { return }
         let traveledIndex = granularDistances.distanceArray[index]
@@ -179,7 +179,7 @@ extension NavigationMapView {
      - parameter routeProgress: Current route progress.
      */
     public func updateVanishingRouteLine(coordinate: CLLocationCoordinate2D?, routeProgress: RouteProgress) {
-        updateTraveledRouteLine(coordinate)
+        updateFractionTraveled(coordinate)
         
         let mainRouteLayerIdentifier = routeProgress.route.identifier(.route(isMainRoute: true))
         let mainRouteCasingLayerIdentifier = routeProgress.route.identifier(.routeCasing(isMainRoute: true))
@@ -241,103 +241,48 @@ extension NavigationMapView {
     
     func routeLineGradient(_ congestionFeatures: [Turf.Feature]? = nil, fractionTraveled: Double, isMain: Bool = true) -> [Double: UIColor] {
         var gradientStops = [Double: UIColor]()
-        var distanceTraveled = fractionTraveled
         
         if let congestionFeatures = congestionFeatures {
             let routeDistance = congestionFeatures.compactMap({ ($0.geometry.value as? LineString)?.distance() }).reduce(0, +)
-            var minimumSegment: (Double, UIColor) = (Double.greatestFiniteMagnitude, .clear)
+            // The route line color for the nextDown of line gradient stops. Defaults as `traversedRouteColor`.
+            var previousStopColor = traversedRouteColor
+            var legDistanceTraveled = 0.0
             
-            for (index, feature) in congestionFeatures.enumerated() {
+            for (_, feature) in congestionFeatures.enumerated() {
+                // The color for the route line basedon on the value of `CurrentLegAttribute` and the `CongestionAttribute`. Defaults as `routeCasingColor`.
                 var associatedFeatureColor = routeCasingColor
-                let congestionLevel = feature.properties?[CongestionAttribute] as? String
-                if let isCurrentLeg = feature.properties?[CurrentLegAttribute] as? Bool, isCurrentLeg {
-                    associatedFeatureColor = congestionColor(for: congestionLevel, isMain: isMain)
-                }
-
+                // Each feature in the `congestionFeatures` represents one route leg.
                 let lineString = feature.geometry.value as? LineString
-                guard let distance = lineString?.distance() else { return gradientStops }
+                guard let legDistance = lineString?.distance() else { return gradientStops }
+                let legFraction = legDistance/routeDistance
                 
-                if index == congestionFeatures.startIndex {
-                    distanceTraveled = distanceTraveled + distance
-                    
-                    let segmentEndPercentTraveled = CGFloat(distanceTraveled / routeDistance)
-                    let currentGradientStop = Double(segmentEndPercentTraveled.nextDown)
-                    if currentGradientStop >= fractionTraveled {
-                        gradientStops[currentGradientStop] = associatedFeatureColor
-                        
-                        if currentGradientStop < minimumSegment.0 {
-                            minimumSegment = (currentGradientStop, associatedFeatureColor)
-                        }
-                        
-                        if index + 1 < congestionFeatures.count {
-                            let currentGradientStop = Double(segmentEndPercentTraveled.nextUp)
-                            let currentColor = congestionColor(for: congestionFeatures[index + 1].properties?["congestion"] as? String, isMain: isMain)
-                            gradientStops[currentGradientStop] = currentColor
+                if let congestionAttribute = feature.properties?[CongestionAttribute] as? [Double: String],
+                   let isCurrentLeg = feature.properties?[CurrentLegAttribute] as? Bool {
+                    // When `CurrentLegAttribute` is true, the route leg displays the congestion level. Otherwise, it shows the `routeCasingColor`.
+                    if isCurrentLeg {
+                        for fractionInLeg in congestionAttribute.keys {
+                            let fractionInRoute = fractionInLeg * legFraction
+                            let congestionLevel = congestionAttribute[fractionInLeg]
+                            associatedFeatureColor = congestionColor(for: congestionLevel, isMain: isMain)
                             
-                            if currentGradientStop < minimumSegment.0 {
-                                minimumSegment = (currentGradientStop, currentColor)
-                            }
+                            let nextDownfractionInRoute = Double(CGFloat(fractionInRoute).nextDown)
+                            gradientStops[fractionInRoute] = associatedFeatureColor
+                            gradientStops[nextDownfractionInRoute] = previousStopColor
+                            previousStopColor = associatedFeatureColor
                         }
-                    }
-                    
-                    continue
-                }
-                
-                if index == congestionFeatures.endIndex - 1 {
-                    let lastGradientStop: Double = 1.0
-                    gradientStops[lastGradientStop] = associatedFeatureColor
-                    
-                    if lastGradientStop < minimumSegment.0 {
-                        minimumSegment = (lastGradientStop, associatedFeatureColor)
-                    }
-                    
-                    continue
-                }
-                
-                let segmentStartPercentTraveled = CGFloat(distanceTraveled / routeDistance)
-                
-                if Double(segmentStartPercentTraveled.nextUp) >= fractionTraveled {
-                    let currentGradientStop = Double(segmentStartPercentTraveled.nextUp)
-                    gradientStops[currentGradientStop] = associatedFeatureColor
-                    
-                    if currentGradientStop < minimumSegment.0 {
-                        minimumSegment = (currentGradientStop, associatedFeatureColor)
+                    } else if previousStopColor != traversedRouteColor && previousStopColor != routeCasingColor {
+                        // This leg is just after the current leg, assigned `routeCasingColor`.
+                        let traveledLegFraction = legDistanceTraveled / routeDistance
+                        let nextDownTraveledLeg = Double(CGFloat(traveledLegFraction).nextDown)
+                        gradientStops[traveledLegFraction] = routeCasingColor
+                        gradientStops[nextDownTraveledLeg] = previousStopColor
+                        previousStopColor = routeCasingColor
                     }
                 }
-                
-                distanceTraveled = distanceTraveled + distance
-                
-                let segmentEndPercentTraveled = CGFloat(distanceTraveled / routeDistance)
-                if Double(segmentEndPercentTraveled.nextDown) >= fractionTraveled {
-                    let currentGradientStop = Double(segmentEndPercentTraveled.nextDown)
-                    gradientStops[currentGradientStop] = associatedFeatureColor
-                    
-                    if currentGradientStop < minimumSegment.0 {
-                        minimumSegment = (currentGradientStop, associatedFeatureColor)
-                    }
-                }
-
-                if index + 1 < congestionFeatures.count && Double(segmentEndPercentTraveled.nextUp) >= fractionTraveled {
-                    let currentGradientStop = Double(segmentEndPercentTraveled.nextUp)
-                    let nextCongestionLevel = congestionFeatures[index + 1].properties?[CongestionAttribute] as? String
-                    var currentColor = routeCasingColor
-                    if let isCurrentLeg = congestionFeatures[index + 1].properties?[CurrentLegAttribute] as? Bool, isCurrentLeg {
-                        currentColor = congestionColor(for: nextCongestionLevel, isMain: isMain)
-                    }
-                    gradientStops[currentGradientStop] = currentColor
-                    
-                    if currentGradientStop < minimumSegment.0 {
-                        minimumSegment = (currentGradientStop, currentColor)
-                    }
-                }
+                legDistanceTraveled += legDistance
             }
+            gradientStops = updateRouteLineGradientStops(fractionTraveled: fractionTraveled, gradientStops: gradientStops)
             
-            gradientStops[0.0] = traversedRouteColor
-            let currentGradientStop = Double(CGFloat(fractionTraveled).nextDown)
-            if currentGradientStop >= 0.0 {
-                gradientStops[currentGradientStop] = traversedRouteColor
-            }
-            gradientStops[fractionTraveled] = minimumSegment.1
         } else {
             let percentTraveled = CGFloat(fractionTraveled)
             gradientStops[0.0] = traversedRouteColor

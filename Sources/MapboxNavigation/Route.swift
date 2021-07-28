@@ -44,13 +44,13 @@ extension Route {
     }
     
     func congestionFeatures(legIndex: Int? = nil,
-                            isAlternativeRoute: Bool = false,
                             roadClassesWithOverriddenCongestionLevels: Set<MapboxStreetsRoadClass>? = nil) -> [Feature] {
         guard let coordinates = shape?.coordinates, let shape = shape else { return [] }
         var features: [Feature] = []
         
         for (index, leg) in legs.enumerated() {
-            let legFeatures: [Feature]
+            let legFeatures: Feature
+            let currentLegAttribute = (legIndex != nil) ? index == legIndex : true
             
             if let congestionLevels = leg.segmentCongestionLevels, congestionLevels.count < coordinates.count {
                 // The last coordinate of the preceding step, is shared with the first coordinate of the next step, we don't need both.
@@ -62,30 +62,26 @@ extension Route {
                     return index == 0 ? stepCoordinates : allCoordinates + stepCoordinates.suffix(from: 1)
                 }
                 
-                let mergedCongestionSegments = legCoordinates.combined(congestionLevels,
-                                                                       streetsRoadClasses: leg.streetsRoadClasses,
-                                                                       roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
-                
-                legFeatures = mergedCongestionSegments.map { (congestionSegment: CongestionSegment) -> Feature in
-                    var feature = Feature(geometry: .lineString(LineString(congestionSegment.0)))
-                    feature.properties = [
-                        CongestionAttribute: String(describing: congestionSegment.1),
-                        "isAlternativeRoute": isAlternativeRoute,
-                        CurrentLegAttribute: (legIndex != nil) ? index == legIndex : true
-                    ]
-                    
-                    return feature
-                }
+                let congestionAttribute: [Double: String]
+                congestionAttribute = legCoordinates.combined(congestionLevels,
+                                                              streetsRoadClasses: leg.streetsRoadClasses,
+                                                              roadClassesWithOverriddenCongestionLevels: roadClassesWithOverriddenCongestionLevels)
+
+                var feature = Feature(geometry: .lineString(LineString(legCoordinates)))
+                feature.properties = [
+                    CongestionAttribute: congestionAttribute,
+                    CurrentLegAttribute: currentLegAttribute
+                ]
+                legFeatures = feature
             } else {
                 var feature = Feature(geometry: .lineString(LineString(shape.coordinates)))
                 feature.properties = [
-                    "isAlternativeRoute": isAlternativeRoute,
-                    CurrentLegAttribute: (legIndex != nil) ? index == legIndex : true
+                    CurrentLegAttribute: currentLegAttribute
                 ]
-                legFeatures = [feature]
+                legFeatures = feature
             }
             
-            features.append(contentsOf: legFeatures)
+            features.append(legFeatures)
         }
         
         return features

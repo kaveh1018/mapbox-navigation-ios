@@ -127,7 +127,7 @@ class NavigationMapViewTests: TestCase {
 
         navigationMapView.initPrimaryRoutePoints(route: route)
         navigationMapView.updateUpcomingRoutePointIndex(routeProgress: testRouteProgress)
-        navigationMapView.updateTraveledRouteLine(targetPoint)
+        navigationMapView.updateFractionTraveled(targetPoint)
 
         let expectedTraveledFraction = 0.06383308537010246
 
@@ -181,7 +181,7 @@ class NavigationMapViewTests: TestCase {
         var congestions = route.congestionFeatures()
         XCTAssertEqual(congestions.count, 1)
         
-        // Since `Route.congestionFeatures(legIndex:isAlternativeRoute:roadClassesWithOverriddenCongestionLevels:)`
+        // Since `Route.congestionFeatures(legIndex:roadClassesWithOverriddenCongestionLevels:)`
         // merges congestion levels which are similar it is expected that only one congestion
         // level is shown for this route.
         var expectedCongestionLevel: CongestionLevel = .unknown
@@ -210,7 +210,7 @@ class NavigationMapViewTests: TestCase {
             .unknown
         ]
         
-        // Since `Route.congestionFeatures(legIndex:isAlternativeRoute:roadClassesWithOverriddenCongestionLevels:)`
+        // Since `Route.congestionFeatures(legIndex:roadClassesWithOverriddenCongestionLevels:)`
         // merges congestion levels which are similar in such case it is expected that mixed congestion
         // levels remain unmodified.
         congestions.enumerated().forEach {

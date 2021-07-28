@@ -598,7 +598,6 @@ open class NavigationMapView: UIView {
             lineLayer?.lineJoin = .constant(.round)
             lineLayer?.lineCap = .constant(.round)
             
-            // TODO: Verify that `isAlternativeRoute` parameter usage is needed.
             if isMainRoute {
                 let gradientStops: [Double: UIColor]
                 if !currentLineGradientStops.isEmpty {

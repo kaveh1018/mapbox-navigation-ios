@@ -70,34 +70,35 @@ extension Array where Iterator.Element == CLLocationCoordinate2D {
      */
     func combined(_ congestionLevels: [CongestionLevel],
                   streetsRoadClasses: [MapboxStreetsRoadClass?]? = nil,
-                  roadClassesWithOverriddenCongestionLevels: Set<MapboxStreetsRoadClass>? = nil) -> [CongestionSegment] {
-        var segments: [CongestionSegment] = []
-        segments.reserveCapacity(congestionLevels.count)
+                  roadClassesWithOverriddenCongestionLevels: Set<MapboxStreetsRoadClass>? = nil) -> [Double: String] {
+        var congestionStartAttribute = [Double: String]()
+        var preCongestionLevel = CongestionLevel.unknown
         
-        var index = 0
-        for (firstSegment, congestionLevel) in zip(zip(self, self.suffix(from: 1)), congestionLevels) {
-            let coordinates = [firstSegment.0, firstSegment.1]
-            
-            var overriddenCongestionLevel = congestionLevel
-            if let streetsRoadClasses = streetsRoadClasses,
-               let roadClassesWithOverriddenCongestionLevels = roadClassesWithOverriddenCongestionLevels,
-               streetsRoadClasses.indices.contains(index),
-               let streetsRoadClass = streetsRoadClasses[index],
-               congestionLevel == .unknown,
-               roadClassesWithOverriddenCongestionLevels.contains(streetsRoadClass) {
-                overriddenCongestionLevel = .low
+        if let legDistance = self.distance() {
+            for index in self.indices.dropLast(2) {
+                var overriddenCongestionLevel = congestionLevels[index]
+                
+                if let streetsRoadClasses = streetsRoadClasses,
+                   let roadClassesWithOverriddenCongestionLevels = roadClassesWithOverriddenCongestionLevels,
+                   streetsRoadClasses.indices.contains(index),
+                   let streetsRoadClass = streetsRoadClasses[index],
+                   congestionLevels[index] == .unknown,
+                   roadClassesWithOverriddenCongestionLevels.contains(streetsRoadClass) {
+                    overriddenCongestionLevel = .low
+                }
+                
+                let congestionLevelString = String(describing: overriddenCongestionLevel)
+                
+                if overriddenCongestionLevel != preCongestionLevel {
+                    if let currentCongestionDistance = self.distance(to: self[index]) {
+                        let startFractionInLeg = currentCongestionDistance / legDistance
+                        congestionStartAttribute[startFractionInLeg] = congestionLevelString
+                        preCongestionLevel = overriddenCongestionLevel
+                    }
+                }
             }
-            
-            if segments.last?.1 == overriddenCongestionLevel {
-                segments[segments.count - 1].0 += coordinates
-            } else {
-                segments.append((coordinates, overriddenCongestionLevel))
-            }
-            
-            index += 1
         }
-        
-        return segments
+        return congestionStartAttribute
     }
     
     func sliced(from: CLLocationCoordinate2D? = nil, to: CLLocationCoordinate2D? = nil) -> [CLLocationCoordinate2D] {
